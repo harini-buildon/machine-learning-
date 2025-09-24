@@ -1,0 +1,116 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyP+m2LVMSdEboLQd5Sas1bC",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/harini-buildon/machine-learning-/blob/main/Task%202\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "ZYwnsv2WgAwA",
+        "outputId": "fbb157bf-8578-4773-8dbb-c1cc997452c9"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "\n",
+            "Initial Specific hypothesis S0:  ['0', '0', '0', '0', '0', '0']\n",
+            "Initial General hypothesis G0:  [['?', '?', '?', '?', '?', '?']]\n",
+            "\n",
+            "After instance 1 (['Sunny' 'Warm' 'Normal' 'Strong' 'Warm' 'Same'], Yes):\n",
+            "S: [np.str_('Sunny'), np.str_('Warm'), np.str_('Normal'), np.str_('Strong'), np.str_('Warm'), np.str_('Same')]\n",
+            "G: [['?', '?', '?', '?', '?', '?']]\n",
+            "\n",
+            "After instance 2 (['Sunny' 'Warm' 'High' 'Strong' 'Warm' 'Same'], Yes):\n",
+            "S: [np.str_('Sunny'), np.str_('Warm'), '?', np.str_('Strong'), np.str_('Warm'), np.str_('Same')]\n",
+            "G: [['?', '?', '?', '?', '?', '?']]\n",
+            "\n",
+            "After instance 3 (['Rainy' 'Cold' 'High' 'Strong' 'Warm' 'Change'], No):\n",
+            "S: [np.str_('Sunny'), np.str_('Warm'), '?', np.str_('Strong'), np.str_('Warm'), np.str_('Same')]\n",
+            "G: [[np.str_('Sunny'), '?', '?', '?', '?', '?'], ['?', np.str_('Warm'), '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?'], ['?', '?', '?', '?', '?', np.str_('Same')]]\n",
+            "\n",
+            "After instance 4 (['Sunny' 'Warm' 'High' 'Strong' 'Cool' 'Change'], Yes):\n",
+            "S: [np.str_('Sunny'), np.str_('Warm'), '?', np.str_('Strong'), '?', '?']\n",
+            "G: [[np.str_('Sunny'), '?', '?', '?', '?', '?'], ['?', np.str_('Warm'), '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]\n",
+            "\n",
+            "Final Specific hypothesis: [np.str_('Sunny'), np.str_('Warm'), '?', np.str_('Strong'), '?', '?']\n",
+            "Final General hypothesis: [[np.str_('Sunny'), '?', '?', '?', '?', '?'], ['?', np.str_('Warm'), '?', '?', '?', '?'], ['?', '?', '?', '?', '?', '?']]\n"
+          ]
+        }
+      ],
+      "source": [
+        "import numpy as np\n",
+        "# Training Data (example: [Sky, Temp, Humidity, Wind, Water, Forecast], Target: EnjoySport)\n",
+        "data = np.array([\n",
+        "    ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes'],\n",
+        "    ['Sunny', 'Warm', 'High',   'Strong', 'Warm', 'Same', 'Yes'],\n",
+        "    ['Rainy', 'Cold', 'High',   'Strong', 'Warm', 'Change', 'No'],\n",
+        "    ['Sunny', 'Warm', 'High',   'Strong', 'Cool', 'Change', 'Yes']\n",
+        "])\n",
+        "# Separate attributes and target\n",
+        "X = data[:, :-1]\n",
+        "y = data[:, -1]\n",
+        "# Initialize specific (S) and general (G) hypotheses\n",
+        "num_features = X.shape[1]\n",
+        "S = ['0'] * num_features\n",
+        "G = [['?'] * num_features]\n",
+        "print(\"\\nInitial Specific hypothesis S0: \", S)\n",
+        "print(\"Initial General hypothesis G0: \", G)\n",
+        "# Candidate Elimination\n",
+        "for i, instance in enumerate(X):\n",
+        "    if y[i] == 'Yes':  # Positive example\n",
+        "        for j in range(num_features):\n",
+        "            if S[j] == '0':\n",
+        "                S[j] = instance[j]\n",
+        "            elif S[j] != instance[j]:\n",
+        "                S[j] = '?'\n",
+        "        # Remove inconsistent hypotheses from G\n",
+        "        G = [g for g in G if all(s == g[j] or g[j] == '?' for j, s in\n",
+        "enumerate(S))]\n",
+        "    else:  # Negative example\n",
+        "        new_G = []\n",
+        "        for g in G:\n",
+        "            for j in range(num_features):\n",
+        "                if g[j] == '?':\n",
+        "                    if S[j] != instance[j] and S[j] != '0':\n",
+        "                        g_new = g.copy()\n",
+        "                        g_new[j] = S[j]\n",
+        "                        new_G.append(g_new)\n",
+        "        G = new_G\n",
+        "    print(f\"\\nAfter instance {i+1} ({instance}, {y[i]}):\")\n",
+        "    print(\"S:\", S)\n",
+        "    print(\"G:\", G)\n",
+        "print(\"\\nFinal Specific hypothesis:\", S)\n",
+        "print(\"Final General hypothesis:\", G)"
+      ]
+    }
+  ]
+}
